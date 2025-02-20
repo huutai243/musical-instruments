@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Account Verification</title>
+</head>
+<body>
+<h2>Hello [[${username}]],</h2>
+<p>Thank you for registering on our website.</p>
+<p>Please click the link below to verify your account:</p>
+<p>
+    <a th:href="${verificationLink}">Verify your account</a>
+</p>
+<p>If the above link does not work, copy and paste this URL into your browser:</p>
+<p th:text="${verificationLink}"></p>
+<hr/>
+<p>Regards,<br/>Musical Instrument Team</p>
+</body>
+</html>

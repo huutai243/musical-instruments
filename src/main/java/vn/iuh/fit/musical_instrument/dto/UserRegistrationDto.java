@@ -17,5 +17,5 @@ public class UserRegistrationDto {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
-    private String userEmail;
+    private String email;
 }

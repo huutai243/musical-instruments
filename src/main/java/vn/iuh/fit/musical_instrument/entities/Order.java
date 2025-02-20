@@ -1,8 +1,4 @@
-package vn.iuh.fit.musical_instrument.entites;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+package vn.iuh.fit.musical_instrument.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -10,6 +6,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -29,19 +29,20 @@ public class Order extends BaseEntity {
     @Column(name = "order_date", nullable = false)
     private Date orderDate;
 
-    // Mỗi đơn hàng thuộc về một User
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
-
     // Ví dụ: 0 - chưa giao, 1 - đã giao
     @Column(name = "is_shipped")
     private int isShipped;
 
-    // Trạng thái đơn hàng (có thể mở rộng thành enum nếu cần)
+    // Trạng thái đơn hàng (có thể dùng enum)
     @Column(name = "status")
     private int status;
 
+    // Đơn hàng thuộc về 1 user
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    // Một order có nhiều orderDetail
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderDetail> orderDetails = new ArrayList<>();
 }
-

@@ -1,21 +1,15 @@
-package vn.iuh.fit.musical_instrument.entites;
+package vn.iuh.fit.musical_instrument.entities;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "product")
@@ -47,19 +41,19 @@ public class Product extends BaseEntity {
     private String productDesc;
 
     @NotNull
-    @Column(name = "status", nullable = false)
-    private int statusSell;
+    @Column(name = "status_sell", nullable = false)
+    private int statusSell; // 0: hết hàng, 1: đang bán, ...
 
-    // Một sản phẩm có thể xuất hiện trong nhiều giỏ hàng (CartItem)
+    // Một sản phẩm thuộc một Category
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    // Quan hệ với CartItem
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartItem> cartItems = new ArrayList<>();
 
-    // Mỗi sản phẩm thuộc một danh mục
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Category category;
-
-    // Một sản phẩm có thể có nhiều OrderDetail
+    // Quan hệ với OrderDetail
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderDetail> orderDetails = new ArrayList<>();
 }
-

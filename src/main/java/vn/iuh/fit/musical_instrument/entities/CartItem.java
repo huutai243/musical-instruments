@@ -1,11 +1,6 @@
-package vn.iuh.fit.musical_instrument.entites;
+package vn.iuh.fit.musical_instrument.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,14 +21,13 @@ public class CartItem extends BaseEntity {
     @Column(name = "total_price", nullable = false)
     private double totalPrice;
 
-    // Mỗi CartItem liên kết với 1 sản phẩm
+    // Nhiều CartItem liên kết với 1 Product
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    // Mỗi CartItem thuộc về một ShoppingCart
+    // Nhiều CartItem thuộc về 1 ShoppingCart
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shopping_cart_id", nullable = false)
     private ShoppingCart cart;
 }
-

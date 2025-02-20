@@ -1,23 +1,16 @@
-package vn.iuh.fit.musical_instrument.entites;
+package vn.iuh.fit.musical_instrument.entities;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "user")
@@ -39,16 +32,25 @@ public class User extends BaseEntity {
 
     @NotBlank
     @Email
-    @Column(name = "user_email", nullable = false, unique = true, length = 50)
-    private String userEmail;
+    @Column(name = "email", nullable = false, unique = true, length = 50)
+    private String email;
 
     @Column(name = "phone_number")
     private String phoneNumber;
 
-    // Quan hệ OneToOne với ShoppingCart (mappedBy ở ShoppingCart)
+    // Ví dụ: trạng thái active, locked,...
+    @Column(name = "status", nullable = false)
+    private int status;
+
+    // Đã xác thực tài khoản qua email hay chưa
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
+    // OneToOne với ShoppingCart
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private ShoppingCart shoppingCart;
 
+    // Nhiều Role
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_role",
@@ -57,15 +59,11 @@ public class User extends BaseEntity {
     )
     private Collection<Role> roles;
 
-    @OneToMany(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    // Một người dùng có nhiều đơn hàng
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Order> orders = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    // Một người dùng có nhiều token (để xác thực email, reset password, etc.)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<SecureToken> tokens;
-
-    @Column(name = "status", nullable = false)
-    private int status;
-
-    @Column(name = "account_verified", nullable = false)
-    private boolean accountVerified;
 }

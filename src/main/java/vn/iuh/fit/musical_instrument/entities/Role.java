@@ -1,15 +1,12 @@
-package vn.iuh.fit.musical_instrument.entites;
+package vn.iuh.fit.musical_instrument.entities;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "role")
@@ -32,4 +29,3 @@ public class Role extends BaseEntity {
         this.code = code;
     }
 }
-

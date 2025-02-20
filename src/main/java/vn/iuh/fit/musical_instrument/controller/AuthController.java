@@ -1,7 +1,8 @@
 package vn.iuh.fit.musical_instrument.controller;
 
+import org.springframework.web.servlet.view.RedirectView;
 import vn.iuh.fit.musical_instrument.dto.UserRegistrationDto;
-import vn.iuh.fit.musical_instrument.entites.User;
+import vn.iuh.fit.musical_instrument.entities.User;
 import vn.iuh.fit.musical_instrument.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -33,15 +34,19 @@ public class AuthController {
     }
 
     // Endpoint xác thực email
+    // Endpoint xác thực email và chuyển hướng về trang đăng nhập
     @GetMapping("/verify")
-    public ResponseEntity<String> verifyUser(@RequestParam("token") String token) {
+    public RedirectView verifyUser(@RequestParam("token") String token) {
         boolean verified = userService.verifyUser(token);
+        RedirectView redirectView = new RedirectView();
         if (verified) {
-            // Nếu xác thực thành công, thông báo kích hoạt tài khoản và có thể chuyển hướng người dùng đến trang đăng nhập
-            return ResponseEntity.ok("Account verified successfully. Please login.");
+            // Nếu xác thực thành công, chuyển hướng đến trang login (có thể là http://localhost:8080/login)
+            redirectView.setUrl("http://localhost:8080/login");
         } else {
-            return new ResponseEntity<>("Invalid or expired token", HttpStatus.BAD_REQUEST);
+            // Nếu không thành công, chuyển hướng đến trang login với thông báo lỗi
+            redirectView.setUrl("http://localhost:8080/login?error=invalidOrExpiredToken");
         }
+        return redirectView;
     }
 }
 

@@ -1,10 +1,6 @@
-package vn.iuh.fit.musical_instrument.entites;
+package vn.iuh.fit.musical_instrument.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,14 +17,13 @@ public class OrderDetail extends BaseEntity {
     @Column(name = "detail_quantity", nullable = false)
     private int detailQuantity;
 
-    // Mỗi OrderDetail thuộc về 1 Order
+    // Nhiều OrderDetail thuộc về 1 Order
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
     private Order order;
 
-    // Mỗi OrderDetail liên kết với 1 sản phẩm
+    // Mỗi OrderDetail liên kết với 1 Product
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
     private Product product;
-
-    // Không đặt logic nghiệp vụ trong setter; kiểm tra số lượng tồn kho nên được xử lý ở tầng Service
 }
-
