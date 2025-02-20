@@ -4,11 +4,18 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import vn.iuh.fit.musical_instrument.dto.UserRegistrationDto;
+import vn.iuh.fit.musical_instrument.dto.request.RegistrationDto;
+import vn.iuh.fit.musical_instrument.entities.RefreshToken;
 import vn.iuh.fit.musical_instrument.entities.SecureToken;
 import vn.iuh.fit.musical_instrument.entities.User;
 import vn.iuh.fit.musical_instrument.repository.SecureTokenRepository;
@@ -16,40 +23,46 @@ import vn.iuh.fit.musical_instrument.repository.UserRepository;
 import vn.iuh.fit.musical_instrument.services.EmailService;
 import vn.iuh.fit.musical_instrument.services.UserService;
 
-/**
- * Triển khai UserService
- * - Đăng ký user
- * - Gửi email xác thực
- * - Xác thực token
- */
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+
     private final UserRepository userRepository;
-    private final SecureTokenRepository secureTokenRepository;
+    private final SecureTokenRepository secureTokenRepository; // Dùng cho email verification
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final AuthenticationManager authenticationManager;
 
     public UserServiceImpl(UserRepository userRepository,
                            SecureTokenRepository secureTokenRepository,
+
                            PasswordEncoder passwordEncoder,
-                           EmailService emailService) {
+                           EmailService emailService,
+
+                           AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.secureTokenRepository = secureTokenRepository;
+
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+
+        this.authenticationManager = authenticationManager;
     }
 
     @Override
-    public User registerUser(UserRegistrationDto dto) {
+    public User registerUser(RegistrationDto dto) {
+        logger.info("Registering user: {}", dto.getUserName());
         // 1. Kiểm tra username đã tồn tại chưa
         if (userRepository.findByUserName(dto.getUserName()).isPresent()) {
+            logger.warn("Username {} already exists", dto.getUserName());
             throw new IllegalArgumentException("Username already exists");
         }
 
         // 2. Kiểm tra email đã tồn tại chưa
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+            logger.warn("Email {} already exists", dto.getEmail());
             throw new IllegalArgumentException("Email already exists");
         }
 
@@ -58,67 +71,61 @@ public class UserServiceImpl implements UserService {
         user.setUserName(dto.getUserName());
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setEmailVerified(false);  // Tài khoản chưa xác thực
-        user.setStatus(1);             // Ví dụ: 1 = active, 0 = locked
-        // Nếu DTO có trường phoneNumber, fullName, v.v. => set vào đây
+        user.setEmailVerified(false);
+        user.setStatus(1);
 
         // 4. Lưu user vào DB
         User savedUser = userRepository.save(user);
+        logger.info("User {} registered successfully with id {}", savedUser.getUserName(), savedUser.getId());
 
         // 5. Tạo token xác thực bằng UUID
         SecureToken token = new SecureToken();
         String tokenValue = UUID.randomUUID().toString();
         token.setToken(tokenValue);
         token.setUser(savedUser);
-        token.setExpiresAt(LocalDateTime.now().plusHours(24)); // hết hạn sau 24h
+        token.setExpiresAt(LocalDateTime.now().plusHours(24));
         secureTokenRepository.save(token);
+        logger.info("Verification token generated for user {}: {}", savedUser.getUserName(), tokenValue);
 
-        // 6. Gửi email xác thực kèm link chứa token
+        // 6. Gửi email xác thực
         String verificationLink = "http://localhost:8080/api/auth/verify?token=" + tokenValue;
         String emailBody = "Please click the link to verify your account: "
                 + "<a href=\"" + verificationLink + "\">Click here</a>";
-
-        emailService.sendEmail(
-                savedUser.getEmail(),
-                "Account Verification",
-                emailBody
-        );
+        emailService.sendEmail(savedUser.getEmail(), "Account Verification", emailBody);
+        logger.info("Verification email sent to {}", savedUser.getEmail());
 
         return savedUser;
     }
 
     @Override
     public boolean verifyUser(String tokenValue) {
-        // 1. Tìm SecureToken trong DB
+        logger.info("Verifying token: {}", tokenValue);
         Optional<SecureToken> optToken = secureTokenRepository.findByToken(tokenValue);
         if (optToken.isEmpty()) {
-            return false; // Không tìm thấy token => xác thực thất bại
+            logger.warn("Verification token {} not found", tokenValue);
+            return false;
         }
-
         SecureToken token = optToken.get();
 
-        // 2. Kiểm tra nếu token đã được sử dụng
         if (token.isUsed()) {
+            logger.warn("Token {} has already been used", tokenValue);
             return false;
         }
 
-        // 3. Kiểm tra token đã hết hạn chưa
         if (token.isExpired()) {
-            // Nếu hết hạn, bạn có thể xóa token hoặc cập nhật trạng thái
+            logger.warn("Token {} is expired", tokenValue);
             token.setUsed(true);
             secureTokenRepository.save(token);
             return false;
         }
 
-        // 4. Kích hoạt emailVerified cho user
         User user = token.getUser();
         user.setEmailVerified(true);
         userRepository.save(user);
+        logger.info("User {} email verified", user.getUserName());
 
-        // 5. Đánh dấu token là đã sử dụng (không xóa, để lưu lịch sử)
         token.setUsed(true);
         secureTokenRepository.save(token);
-
         return true;
     }
 

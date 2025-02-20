@@ -1,4 +1,4 @@
-package vn.iuh.fit.musical_instrument.dto;
+package vn.iuh.fit.musical_instrument.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UserRegistrationDto {
+public class RegistrationDto {
 
     @NotBlank(message = "Username is required")
     private String userName;
