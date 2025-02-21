@@ -24,8 +24,7 @@ public class User extends BaseEntity {
     @Column(name = "username", nullable = false, unique = true)
     private String userName;
 
-    @NotBlank
-    @Column(name = "password", nullable = false)
+    @Column(name = "password") // Có thể null nếu đăng nhập bằng OAuth2
     private String password;
 
     @Column(name = "full_name", length = 50)
@@ -41,11 +40,19 @@ public class User extends BaseEntity {
 
     // Ví dụ: trạng thái active, locked,...
     @Column(name = "status", nullable = false)
-    private int status;
+    private int status = 1; // Mặc định là active (1)
 
     // Đã xác thực tài khoản qua email hay chưa
     @Column(name = "email_verified", nullable = false)
-    private boolean emailVerified;
+    private boolean emailVerified = false;
+
+    // OAuth2 Provider (Google, Facebook)
+    @Column(name = "provider")
+    private String provider; // "google" hoặc "facebook"
+
+    // Ảnh đại diện từ OAuth2
+    @Column(name = "profile_picture")
+    private String profilePicture;
 
     // OneToOne với ShoppingCart
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)

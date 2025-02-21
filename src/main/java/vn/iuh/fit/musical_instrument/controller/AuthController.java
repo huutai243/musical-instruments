@@ -36,7 +36,6 @@ public class AuthController {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Dependency Injection qua Constructor
     public AuthController(UserService userService,
                           AuthenticationManager authenticationManager,
                           JwtService jwtService,
@@ -51,7 +50,9 @@ public class AuthController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Endpoint Đăng ký User
+    /**
+     * 🛠 **Đăng ký User mới**
+     */
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@Valid @RequestBody RegistrationDto registrationDto) {
         try {
@@ -62,48 +63,53 @@ public class AuthController {
         }
     }
 
-    // Endpoint Xác thực Email qua Token
+    /**
+     * 🛠 **Xác thực tài khoản qua email**
+     */
     @GetMapping("/verify")
     public ResponseEntity<String> verifyUser(@RequestParam("token") String token) {
         boolean verified = userService.verifyUser(token);
-        if (verified) {
-            return ResponseEntity.ok("Email verified successfully. Please login.");
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired token.");
-        }
+        return verified ?
+                ResponseEntity.ok("Email verified successfully. Please login.") :
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired token.");
     }
 
-    // Endpoint Đăng nhập
+    /**
+     *  **Đăng nhập & Nhận JWT**
+     */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         logger.info("User {} is attempting to log in.", loginRequest.getUserName());
 
-        // Kiểm tra User tồn tại không
+        //  Kiểm tra User tồn tại & mật khẩu đúng không
         Optional<User> userOpt = userRepository.findByUserName(loginRequest.getUserName());
         if (userOpt.isEmpty() || !passwordEncoder.matches(loginRequest.getPassword(), userOpt.get().getPassword())) {
             return ResponseEntity.badRequest().body(new AuthResponse("Invalid username or password", null, null));
         }
 
-        // Xác thực người dùng
-        Authentication authentication = authenticationManager.authenticate(
+        //  Xác thực user
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUserName(), loginRequest.getPassword())
         );
 
-        // Tạo Access Token và Refresh Token
-        String accessToken = jwtService.generateAccessToken(loginRequest.getUserName());
-        String refreshToken = jwtService.generateRefreshToken(loginRequest.getUserName());
+        //  Tạo Access Token & Refresh Token
+        User user = userOpt.get();
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
 
-        // Lưu Refresh Token vào DB
+        //  Lưu Refresh Token vào DB
         RefreshToken savedToken = new RefreshToken();
         savedToken.setToken(refreshToken);
-        savedToken.setUser(userOpt.get());
+        savedToken.setUser(user);
         savedToken.setExpiresAt(LocalDateTime.now().plusDays(7));
         refreshTokenRepository.save(savedToken);
 
         return ResponseEntity.ok(new AuthResponse("Login successful", accessToken, refreshToken));
     }
 
-    // Endpoint Làm mới Access Token bằng Refresh Token
+    /**
+     * **Làm mới Access Token bằng Refresh Token**
+     */
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshToken(@RequestParam String refreshToken) {
         Optional<RefreshToken> tokenOpt = refreshTokenRepository.findByToken(refreshToken);
@@ -113,7 +119,7 @@ public class AuthController {
 
         // Tạo Access Token mới từ Refresh Token hợp lệ
         User user = tokenOpt.get().getUser();
-        String newAccessToken = jwtService.generateAccessToken(user.getUserName());
+        String newAccessToken = jwtService.generateAccessToken(user);
 
         return ResponseEntity.ok(new AuthResponse("Token refreshed", newAccessToken, refreshToken));
     }
